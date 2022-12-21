@@ -1,0 +1,239 @@
+#section_enhance {
+	padding-top:100px;
+
+	background: url("../assets/bga.jpg");
+	background-repeat:no-repeat;
+	background-size:100% 800px;
+	
+	width:100%;
+/*
+	background: linear-gradient(#330323, #14163C, #090f33);
+	background-color: rgba(0, 0, 0, 0);
+	background-size: auto;
+	background-size: 200%;
+*/
+}
+
+#section_enhance .containerx:nth-child(2) {
+	width:900px;
+	display: flex;
+	flex-direction: row;
+	justify-content:space-around;
+	flex-flow:wrap;
+	text-align:center;
+}
+
+
+.box2 {
+	width:31%;
+	height:700px;
+	background:#1a0c2b;
+	margin:1%px;
+	box-sizing: border-box;
+	border-radius:6px;
+	padding:20px;
+	margin-bottom:100px;
+	
+
+}
+
+.box2 .icon  {
+	width:100px;
+	height:60px;
+	margin:20px;
+	border-radius:4px;
+}
+
+.box2:nth-child(1) .icon {
+	background-color:#98c3dd;
+}
+
+.box2:nth-child(2) .icon {
+	background-color: #cf9ee1;
+}
+
+.box2:nth-child(3) .icon {
+	background-color: #ff9bc1;
+}
+
+.box2 .icon i {
+	font-size:40px;
+	vertical-align:bottom;
+	margin-top:20px;
+	margin-left:10px;
+}
+
+.box2:nth-child(1) .icon i{
+	color:#333;
+}
+
+.box2:nth-child(2) .icon i {
+	color:#333;
+}
+
+.box2:nth-child(3) .icon i {
+	color:#333;
+}
+
+
+.box2 .name {
+font-family: 'Roboto Condensed', sans-serif;
+font-size:30px;
+}
+
+.box2 .sub {
+font-size:20px;
+height:100px;
+font-family: 'Assistant', sans-serif;
+}
+
+.box2  i {
+	color: green;
+	margin-right:10px;
+}
+
+.box2 p {
+	text-align:left;
+	margin-left:7px;
+	font-size:14px;
+}
+
+.box2 .list {
+	height:210px;
+}
+
+.box2 .list ul {
+	padding-left:20px; 
+	list-style:none;
+	text-align:left;
+}
+
+.box2 .list ul li {
+	margin-bottom:10px; 
+	
+}
+.box2 .list ul li:before {    
+    font-family: 'FontAwesome';
+    content: '\f00c';
+    margin:0 5px 0 -15px;
+	color: green;
+	padding-right:5px;
+}
+
+.box2 .price {
+	font-size:50px;
+}
+
+.box2 {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 0;
+}
+
+.box2::before {
+  position: absolute;
+  content: "";
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  left: -2px;
+  top: -2px;
+  background: linear-gradient(
+    110deg,
+	#c04025,
+	#9213ba,
+    #5e32b3,
+	#2d54b1,
+	#5e32b3,
+	#9213ba,
+	#c04025
+  );
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(1px);
+  animation: move 20s linear infinite;
+  opacity: 0; /* setting this to 1 shows all moving gradients without even having to hover */
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 4px;
+}
+
+.box2:nth-child(1)::before {
+	filter: sepia(100%) saturate(300%) brightness(50%) hue-rotate(140deg); /* this causes the colors to nute */
+}
+
+.box2:nth-child(2)::before {
+	filter: sepia(100%) saturate(300%) brightness(50%) hue-rotate(220deg); /* this causes the colors to nute */
+}
+
+.box2:nth-child(3)::before {
+	filter: sepia(100%) saturate(300%) brightness(50%) hue-rotate(-90deg); /* this causes the colors to nute */
+}
+
+.box2:hover::before {
+  opacity: 1;
+  filter: blur(50px);
+}
+
+.box2:hover::after {
+  opacity: 1; /* when this opacity is set to 0, whole box will become rainbow hues when hover because the plaque layer is transparent. changing it to 0.7-0.9 also gives it translucent effect and you can see the rainbow gradient at the back.*/
+}
+
+.box2::after {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 4px;
+  
+  background: #333; /* this is the color of the box when hover. Remove this and the whole box will become rainbow hues. We can set the plaque to a fix color or we can use the gradients below */
+  
+  /* here is the start of the gradient */
+  background: linear-gradient(
+    110deg,
+	#c04025,
+	#9213ba,
+    #5e32b3,
+	#2d54b1,
+	#5e32b3,
+	#9213ba,
+	#c04025
+  );
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(50px);
+  animation: move 50s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 4px;
+  /* filter: sepia(100%) saturate(300%) brightness(20%) hue-rotate(190deg); /* this causes the colors to mute */
+  /* here is the end of the gradients */
+}
+
+.box2:nth-child(1)::after {
+	filter: sepia(100%) saturate(300%) brightness(20%) hue-rotate(220deg); /* this causes the colors to nute */
+}
+
+.box2:nth-child(2)::after {
+	filter: sepia(100%) saturate(300%) brightness(20%) hue-rotate(220deg); /* this causes the colors to nute */
+}
+
+.box2:nth-child(3)::after {
+	filter: sepia(100%) saturate(300%) brightness(20%) hue-rotate(220deg); /* this causes the colors to nute */
+}
+
+
+@keyframes move {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 400% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
