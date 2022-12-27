@@ -66,7 +66,7 @@ section {
 }
 
 #about .containerx:nth-child(2) {
-	background-image: url("../assets/dotted_line.png");
+	background-image: url("../assets/dotted_line_h.png");
 	background-size:699px 10px; /* 593px; 893px, 1400!!, 100% */
 	background-repeat:no-repeat;
 	background-position:top center;
@@ -124,6 +124,14 @@ section {
 	margin-bottom:70px;
 }
 
+#section_upload {
+  font-size: 1em;
+  font-weight: 400;
+}
+
+.photos {
+	margin-bottom:0px;
+}
 
 
 
@@ -228,85 +236,26 @@ section {
 	margin-bottom: 10px;
 }
 
-#portfolio {
-	text-align:right;
-	padding-right:20px;
-	border-right:1px solid #333;
+
+
+section .steps img {
+	margin-bottom:70px;
+	display: block;
 }
 
-#matrix {
-	text-align:center;
-	padding-left:5px;
-	padding-right:5px;
+section .steps .image_divider{
+	display: block;
 }
 
-#aesthetics {
-	text-align:left;
-	padding-left:20px;
-	border-left:1px solid #333;
+section .steps .image_dotted_line {
+	margin-bottom:0px;
 }
 
-.intro  a {
-  color: #aaa;
+section .steps .title {
+	margin-bottom:30px;
 }
 
-.intro  h3:nth-child(1) div a:hover {
-  color: #4fafe6;
-  filter: sepia(100%) saturate(300%) brightness(70%) hue-rotate(180deg);
-}
 
-.intro  h3:nth-child(2) div a:hover {
-  color: #4fafe6;
-  filter: sepia(100%) saturate(300%) brightness(70%) hue-rotate(70deg);
-}
-
-.intro  h3:nth-child(3) div a:hover {
-  color: #4fafe6;
-  filter: sepia(100%) saturate(300%) brightness(70%) hue-rotate(-90deg);
-}
-
-/* Masonry on phones */
-@media only screen and (max-width: 768px) {
-  .step {
-	width:70%;
-  }
-  
-  .masonry {
-    column-count: 1;
-  }
-  
-  .masonry.gutterless .brick {
-    margin-bottom: 1px;
-  }
-  
-/* Bordered masonry */
-.masonry.bordered {
-  column-rule: 1px solid #eee;
-  column-gap: 1px;
-}
-
-.masonry.bordered .brick {
-  padding-bottom: 0px;
-  margin-bottom: 1px;
-  border-bottom: 0;
-}
-
-#portfolio {
-	text-align:center;
-	border-right:0;
-}
-
-#matrix {
-	text-align:center;
-}
-
-#aesthetics {
-	text-align:center;
-	border-left:0;
-}
-  
-.bgwhite {
-	background-color:#fff;
-}
-  
+section .steps p {
+	width:100%;
 }
