@@ -259,3 +259,47 @@ section .steps .title {
 section .steps p {
 	width:100%;
 }
+
+#section_footer {
+	background:#111;
+	height:200px;
+}
+
+
+.copyright {
+	color:#888;
+	font-family: 'Lato', sans-serif;
+	font-size:.9em;
+}
+
+.copyright a {
+	color:#888;
+}
+#section_footer .containerx:nth-child(1) {
+	margin-top:50px;
+	height:0px;
+}
+
+#section_footer .containerx:nth-child(2) {
+	height:30px;
+}
+
+#section_footer .containerx:nth-child(3) {
+	margin-top:0px;
+	height:35px;
+}
+
+.list-inline li {
+	display: inline-block;
+}
+
+.btn-social {
+  display: inline-block;
+  height: 50px;
+  width: 50px;
+  border-radius: 100%;
+  text-align: center;
+  font-size: 20px;
+  line-height: 45px;
+  color:#888;
+}
