@@ -1,4 +1,4 @@
-#section_package .containerx:nth-child(2) {
+.section_package .containerx:nth-child(3) {
 	width:900px;
 	display: flex;
 	flex-direction: row;
@@ -38,7 +38,7 @@
 }
 
 .box_single:nth-child(2) .icon i{
-	color:#eadcf5;
+	color:#dce9f5;
 }
 
 

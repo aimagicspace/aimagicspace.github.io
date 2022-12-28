@@ -265,6 +265,10 @@ section .steps p {
 	height:200px;
 }
 
+.country {
+	display:none;
+}
+
 
 .copyright {
 	color:#888;
@@ -277,11 +281,11 @@ section .steps p {
 }
 #section_footer .containerx:nth-child(1) {
 	margin-top:50px;
-	height:0px;
+	height:30px;
 }
 
 #section_footer .containerx:nth-child(2) {
-	height:30px;
+	height:0px;
 }
 
 #section_footer .containerx:nth-child(3) {
