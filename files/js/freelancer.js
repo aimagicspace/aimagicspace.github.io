@@ -13,10 +13,10 @@
     });
 
     // Highlight the top nav as scrolling occurs
-    $('body').scrollspy({
-        target: '.navbar-fixed-top',
-        offset: 51
-    });
+    //$('body').scrollspy({
+    //    target: '.navbar-fixed-top',
+    //    offset: 51
+    //});
 
     // Closes the Responsive Menu on Menu Item Click
     $('.navbar-collapse ul li a').click(function(){ 
@@ -24,11 +24,11 @@
     });
 
     // Offset for Main Navigation
-    $('#mainNav').affix({
-        offset: {
-            top: 100
-        }
-    })
+    //$('#mainNav').affix({
+    //    offset: {
+    //        top: 100
+    //    }
+    //})
 
     // Floating label headings for the contact form
     $(function() {
@@ -43,7 +43,7 @@
 	
 	$(document).ready(function(){
 	   $('#demo').bind('contextmenu',function() { return false; });
-	   $('#demo').attr("src", $('#demo source').attr('src').substring(0, 26)+String.charCodeAt('D')+'wiwfwhffiexlm'.split("").reverse().join("")+'/?raw=1');
+	   //$('#demo').attr("src", $('#demo source').attr('src').substring(0, 26)+String.charCodeAt('D')+'wiwfwhffiexlm'.split("").reverse().join("")+'/?raw=1');
 	});
 
 })(jQuery); // End of use strict
