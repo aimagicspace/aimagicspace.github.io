@@ -1,6 +1,7 @@
 $.get("http://ipinfo.io", function (response) {
-    if (response.country == "MY") {
-	alert(response.country);
+    alert(response.country);
+	if (response.country == "MY") {
+	
 		$(".my").show();
 		$(".us").hide();
 	}
