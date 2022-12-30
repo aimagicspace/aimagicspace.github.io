@@ -1,5 +1,5 @@
-$.get("http://ipinfo.io", function (response) {
-    alert(response.country);
+$.get("https://ipinfo.io", function (response) {
+    console.log(response.country);
 	if (response.country == "MY") {
 	
 		$(".my").show();
