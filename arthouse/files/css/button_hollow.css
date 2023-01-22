@@ -1,0 +1,129 @@
+.button_hollow {
+  width: 400px;
+  height: 60px;
+  border: none;
+  outline: none;
+  background: #c38b8b;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  z-index: 4;
+  border-radius: 10px;
+  font-family: 'Passion One', cursive;
+  font-size: 25px;
+  text-transform: uppercase;
+}
+
+.button_hollow_nav {
+  width: 150px;
+  height: 40px;
+  margin:5px;
+  font-size: 1.1em;
+}
+
+
+.button_hollow div:hover {
+  /*color:#333;*/
+}
+
+.button_hollow::before { /* this is the colorful border */
+  position: absolute;
+  content: "";
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  left: -2px;
+  top: -2px;
+  /* rainbow
+  background: linear-gradient(
+    120deg,
+    #ff2400,
+    #e81d1d,
+    #e8b71d,
+    #e3e81d,
+    #1de840,
+    #1ddde8,
+    #2b1de8,
+    #dd00f3,
+    #dd00f3,
+	#ff2400
+  );
+  */
+  background: linear-gradient(
+    110deg,
+	#c04025,
+	#9213ba,
+    #5e32b3,
+	#2d54b1,
+	#5e32b3,
+	#9213ba,
+	#c04025
+  );
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(1px);
+  animation: move 60s linear infinite;
+  opacity: 1; /* setting this to 1 shows all moving gradients without even having to hover */
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 4px;
+}
+
+.button_hollow:hover::before {
+  opacity: 1;
+}
+
+.button_hollow:hover::after {
+  opacity: 1; /* when this opacity is set to 0, whole box will become rainbow hues when hover because the plaque layer is transparent. changing it to 0.7-0.9 also gives it translucent effect and you can see the rainbow gradient at the back.*/
+  background: #000;
+}
+
+.button_hollow::after {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 4px;
+
+  
+  background: #000; /* this is the color of the box when hover. Remove this and the whole box will become rainbow hues. We can set the plaque to a fix color or we can use the gradients below */
+  
+  /* here is the start of the gradient */
+  /*
+  background: linear-gradient(
+    110deg,
+    #ff2400,
+    #e81d1d,
+    #e8b71d,
+    #e3e81d,
+    #1de840,
+    #1ddde8,
+    #2b1de8,
+    #dd00f3,
+    #dd00f3,
+	#ff2400
+  );
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(50px);
+  animation: move 50s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 4px;
+  /* filter: sepia(100%) saturate(300%) brightness(20%) hue-rotate(190deg); /* this causes the colors to mute */
+  /* here is the end of the gradients */
+}
+
+
+@keyframes move {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 400% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
