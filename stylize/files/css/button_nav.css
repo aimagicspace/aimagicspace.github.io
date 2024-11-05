@@ -1,0 +1,53 @@
+
+
+.btn_nav {
+  width: 150px;
+  height: 40px;
+  border: none;
+  outline: none;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  z-index: 4;
+  border-radius: 5px;
+  font-family: 'Passion One', cursive;
+  font-size: 25px;
+  text-transform: uppercase;
+  margin-right:50px;
+  background-color:transparent;
+}
+
+.btn_nav div {
+  z-index:10;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align:center;
+  width:100%;
+  padding-top:0px;
+  padding-bottom:0px;
+  border-radius: 5px;
+  border-left:4px solid white;
+  border-right:4px solid white;
+  opacity:0.75;
+  transition: all .3s ease-in-out;
+}
+
+.btn_nav div:hover {
+  opacity:1;
+}
+
+
+
+
+@keyframes move {
+  0% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 300% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
