@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Piano Studio — Lesson Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+html, body { margin: 0; padding: 0; }
+button:hover:not(:disabled){ transform: translateY(-1px); }
+input, textarea, select { font-family:'Inter',sans-serif; }
+input:focus, textarea:focus, select:focus, button:focus-visible { outline: 2px solid #A8323E; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+
+/* ═════════════════════════════════════════════════════════════
+   ▼▼▼  STEP 1 of setup: paste your two Supabase values here  ▼▼▼
+   (Both come from Supabase → Project Settings → API)
+   ═════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = "https://vxvemhedqnnbkmlwnigx.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_8kWuqsDvGTu4iBn3iWRy4g_wcoonDn0";
+/* ═════════════════════════════════════════════════════════════ */
+
+const { useState, useEffect, useCallback, useRef } = React;
+
+const CONFIGURED = !SUPABASE_URL.includes("PASTE") && !SUPABASE_ANON_KEY.includes("PASTE");
+const sb = CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const C = {
+  ivory: "#FAF7F1", paper: "#FFFFFF", ebony: "#211E1A", inkSoft: "#5C564D",
+  line: "#E4DED2", felt: "#A8323E", feltSoft: "#F6E4E6", brass: "#8A6D3B",
+  brassSoft: "#F3ECDD", green: "#3E6B4F", greenSoft: "#E3EDE6",
+};
+
+const KEYS = {
+  settings: "studio:settings",
+  students: "studio:students",
+  bookings: "studio:bookings",
+  messages: "studio:messages",
+};
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DEFAULT_SETTINGS = {
+  pin: null,
+  lessonMinutes: 60,
+  availability: {
+    1: ["15:00", "16:00", "17:00", "18:00"],
+    2: ["15:00", "16:00", "17:00", "18:00"],
+    3: ["15:00", "16:00", "17:00", "18:00"],
+    4: ["15:00", "16:00", "17:00", "18:00"],
+    5: ["15:00", "16:00", "17:00", "18:00"],
+    6: ["09:00", "10:00", "11:00"],
+    0: [],
+  },
+};
+const ALL_SLOT_TIMES = [];
+for (let h = 7; h <= 20; h++) ALL_SLOT_TIMES.push(`${String(h).padStart(2, "0")}:00`);
+
+/* ── Supabase storage helpers (key/value table "studio") ── */
+async function load(key, fallback) {
+  try {
+    const { data, error } = await sb.from("studio").select("value").eq("key", key).maybeSingle();
+    if (error || !data) return fallback;
+    return data.value;
+  } catch { return fallback; }
+}
+async function save(key, value) {
+  try {
+    const { error } = await sb.from("studio").upsert({ key, value });
+    return !error;
+  } catch { return false; }
+}
+
+/* ── date helpers ── */
+const fmtDateKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const parseDateKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const niceDate = (k) =>
+  parseDateKey(k).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+const niceTime = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  const am = h < 12;
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${hh}:${String(m).padStart(2, "0")} ${am ? "AM" : "PM"}`;
+};
+const todayKey = () => fmtDateKey(new Date());
+
+/* ── UI atoms ── */
+const Btn = ({ children, kind = "solid", style, ...p }) => (
+  <button {...p} style={{
+    fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600,
+    padding: "10px 18px", borderRadius: 8, cursor: p.disabled ? "default" : "pointer",
+    border: kind === "ghost" ? `1px solid ${C.line}` : "1px solid transparent",
+    background: kind === "solid" ? C.ebony : kind === "accent" ? C.felt : "transparent",
+    color: kind === "ghost" ? C.ebony : C.ivory, opacity: p.disabled ? 0.4 : 1,
+    transition: "transform .08s ease, opacity .15s", ...style,
+  }}>{children}</button>
+);
+
+const Tag = ({ children, tone = "neutral" }) => {
+  const tones = {
+    pending: { bg: C.brassSoft, fg: C.brass },
+    confirmed: { bg: C.greenSoft, fg: C.green },
+    declined: { bg: C.feltSoft, fg: C.felt },
+    cancelled: { bg: "#EFECE5", fg: C.inkSoft },
+    neutral: { bg: "#EFECE5", fg: C.inkSoft },
+  };
+  const t = tones[tone] || tones.neutral;
+  return (
+    <span style={{
+      fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600,
+      letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 8px",
+      borderRadius: 999, background: t.bg, color: t.fg,
+    }}>{children}</span>
+  );
+};
+
+const Card = ({ children, style }) => (
+  <div style={{ background: C.paper, border: `1px solid ${C.line}`, borderRadius: 12, padding: 16, ...style }}>
+    {children}
+  </div>
+);
+
+const Staff = () => (
+  <div aria-hidden style={{ margin: "4px 0 16px" }}>
+    {[0, 1, 2, 3, 4].map((i) => (
+      <div key={i} style={{ height: 1, background: C.line, marginBottom: 4, opacity: 1 - i * 0.18 }} />
+    ))}
+  </div>
+);
+
+const h2Style = { fontFamily: "'Fraunces', Georgia, serif", fontSize: 20, fontWeight: 600, margin: "0 0 6px" };
+const pMuted = { color: C.inkSoft, fontSize: 14, lineHeight: 1.5, marginTop: 0 };
+const inputStyle = {
+  width: "100%", boxSizing: "border-box", padding: "10px 12px", fontSize: 15,
+  border: `1px solid ${C.line}`, borderRadius: 8, background: C.ivory, color: C.ebony,
+};
+
+/* ── shown until Supabase keys are pasted in ── */
+function NotConfigured() {
+  return (
+    <Card style={{ maxWidth: 560, margin: "40px auto" }}>
+      <h2 style={h2Style}>Almost there — connect your database</h2>
+      <p style={pMuted}>
+        This app needs your Supabase project URL and anon key. Open{" "}
+        <code>index.html</code> in any text editor, find the two lines near the
+        top marked <strong>STEP 1</strong>, and paste in your values. The
+        setup guide that came with this file walks through it click by click.
+      </p>
+    </Card>
+  );
+}
+
+/* ═══════════ root app ═══════════ */
+function PianoStudio() {
+  const [phase, setPhase] = useState("loading");
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [students, setStudents] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [me, setMe] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2600); };
+
+  const refresh = useCallback(async () => {
+    const [s, st, b, m] = await Promise.all([
+      load(KEYS.settings, null),
+      load(KEYS.students, []),
+      load(KEYS.bookings, []),
+      load(KEYS.messages, []),
+    ]);
+    if (s) setSettings(s);
+    setStudents(st); setBookings(b); setMessages(m);
+    return s;
+  }, []);
+
+  useEffect(() => {
+    if (!CONFIGURED) return;
+    (async () => { await refresh(); setPhase("choose"); })();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (phase !== "teacher" && phase !== "student") return;
+    const id = setInterval(refresh, 8000);
+    return () => clearInterval(id);
+  }, [phase, refresh]);
+
+  const persistSettings = async (next) => { setSettings(next); await save(KEYS.settings, next); };
+  const persistStudents = async (next) => { setStudents(next); await save(KEYS.students, next); };
+  const persistBookings = async (next) => { setBookings(next); await save(KEYS.bookings, next); };
+  const persistMessages = async (next) => { setMessages(next); await save(KEYS.messages, next); };
+
+  const requestBooking = async (dateKey, time) => {
+    const fresh = await load(KEYS.bookings, []);
+    const clash = fresh.find(
+      (b) => b.date === dateKey && b.time === time && ["pending", "confirmed"].includes(b.status)
+    );
+    if (clash) { flash("That time was just taken — pick another."); setBookings(fresh); return; }
+    const next = [...fresh, {
+      id: `bk_${Date.now()}`, studentId: me.id, studentName: me.name,
+      date: dateKey, time, status: "pending", note: "", createdAt: Date.now(),
+    }];
+    await persistBookings(next);
+    flash("Request sent — your teacher will confirm it.");
+  };
+
+  const setBookingStatus = async (id, status) => {
+    await persistBookings(bookings.map((b) => (b.id === id ? { ...b, status } : b)));
+  };
+  const setLessonNote = async (id, note) => {
+    await persistBookings(bookings.map((b) => (b.id === id ? { ...b, note } : b)));
+  };
+  const sendMessage = async (studentId, fromRole, fromName, text) => {
+    if (!text.trim()) return;
+    const fresh = await load(KEYS.messages, []);
+    await persistMessages([...fresh, {
+      id: `msg_${Date.now()}`, studentId, fromRole, fromName, text: text.trim(), ts: Date.now(),
+    }]);
+  };
+
+  if (!CONFIGURED) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.ivory, color: C.ebony, fontFamily: "'Inter', sans-serif" }}>
+        <Header me={null} onSwitch={() => {}} />
+        <NotConfigured />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.ivory, color: C.ebony, fontFamily: "'Inter', sans-serif" }}>
+      <Header me={me} onSwitch={() => { setMe(null); setPhase("choose"); }} />
+      <main style={{ maxWidth: 880, margin: "0 auto", padding: "0 16px 64px" }}>
+        {phase === "loading" && <p style={{ color: C.inkSoft, padding: 24 }}>Opening the studio…</p>}
+
+        {phase === "choose" && (
+          <ChooseRole
+            hasPin={!!settings.pin}
+            onTeacher={() => setPhase(settings.pin ? "teacherPin" : "teacherSetup")}
+            onStudent={() => setPhase("studentPick")}
+          />
+        )}
+
+        {phase === "teacherSetup" && (
+          <TeacherSetup onDone={async (pin) => {
+            await persistSettings({ ...settings, pin });
+            setMe({ role: "teacher" }); setPhase("teacher");
+          }} />
+        )}
+
+        {phase === "teacherPin" && (
+          <TeacherPin pin={settings.pin}
+            onOk={() => { setMe({ role: "teacher" }); setPhase("teacher"); }}
+            onBack={() => setPhase("choose")} />
+        )}
+
+        {phase === "studentPick" && (
+          <StudentPick students={students}
+            onPick={(s) => { setMe({ role: "student", ...s }); setPhase("student"); }}
+            onCreate={async (name) => {
+              const fresh = await load(KEYS.students, []);
+              const s = { id: `st_${Date.now()}`, name: name.trim() };
+              await persistStudents([...fresh, s]);
+              setMe({ role: "student", ...s }); setPhase("student");
+            }}
+            onBack={() => setPhase("choose")} />
+        )}
+
+        {phase === "teacher" && me?.role === "teacher" && (
+          <TeacherHome settings={settings} students={students} bookings={bookings} messages={messages}
+            onSettings={persistSettings} onStatus={setBookingStatus} onNote={setLessonNote}
+            onSend={(sid, text) => sendMessage(sid, "teacher", "Teacher", text)} flash={flash} />
+        )}
+
+        {phase === "student" && me?.role === "student" && (
+          <StudentHome me={me} settings={settings} bookings={bookings} messages={messages}
+            onRequest={requestBooking} onCancel={(id) => setBookingStatus(id, "cancelled")}
+            onSend={(text) => sendMessage(me.id, "student", me.name, text)} />
+        )}
+      </main>
+
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
+          background: C.ebony, color: C.ivory, padding: "10px 18px", borderRadius: 8,
+          fontSize: 14, boxShadow: "0 6px 24px rgba(0,0,0,.18)", zIndex: 50,
+        }}>{toast}</div>
+      )}
+    </div>
+  );
+}
+
+function Header({ me, onSwitch }) {
+  return (
+    <header style={{
+      maxWidth: 880, margin: "0 auto", padding: "28px 16px 8px",
+      display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12,
+    }}>
+      <div>
+        <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 700, fontSize: 28, margin: 0, letterSpacing: "-0.01em" }}>
+          The Piano Studio
+        </h1>
+        <p style={{ margin: "2px 0 0", color: C.inkSoft, fontSize: 13 }}>
+          Lessons, bookings & notes — all in one place
+        </p>
+      </div>
+      {me && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 13, color: C.inkSoft }}>{me.role === "teacher" ? "Teacher" : me.name}</span>
+          <Btn kind="ghost" style={{ padding: "6px 12px" }} onClick={onSwitch}>Switch user</Btn>
+        </div>
+      )}
+    </header>
+  );
+}
+
+function ChooseRole({ hasPin, onTeacher, onStudent }) {
+  return (
+    <div style={{ paddingTop: 8 }}>
+      <Staff />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+        <Card>
+          <h2 style={h2Style}>I'm the teacher</h2>
+          <p style={pMuted}>Set your weekly availability, confirm lesson requests, keep notes, and message students.</p>
+          <Btn onClick={onTeacher}>{hasPin ? "Enter teacher PIN" : "Set up my studio"}</Btn>
+        </Card>
+        <Card>
+          <h2 style={h2Style}>I'm a student</h2>
+          <p style={pMuted}>Book a lesson time, see your upcoming lessons, and message your teacher about scheduling.</p>
+          <Btn kind="accent" onClick={onStudent}>Continue as student</Btn>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function TeacherSetup({ onDone }) {
+  const [pin, setPin] = useState("");
+  return (
+    <Card style={{ maxWidth: 420, marginTop: 16 }}>
+      <h2 style={h2Style}>Welcome, teacher</h2>
+      <p style={pMuted}>
+        Choose a 4-digit PIN so only you can manage the schedule. (This is a light lock,
+        not real security — don't reuse a bank PIN.)
+      </p>
+      <input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+        placeholder="e.g. 4321" inputMode="numeric" style={inputStyle} />
+      <div style={{ marginTop: 12 }}>
+        <Btn disabled={pin.length !== 4} onClick={() => onDone(pin)}>Save PIN & open studio</Btn>
+      </div>
+    </Card>
+  );
+}
+
+function TeacherPin({ pin, onOk, onBack }) {
+  const [val, setVal] = useState("");
+  const [err, setErr] = useState(false);
+  return (
+    <Card style={{ maxWidth: 420, marginTop: 16 }}>
+      <h2 style={h2Style}>Teacher PIN</h2>
+      <input value={val}
+        onChange={(e) => { setErr(false); setVal(e.target.value.replace(/\D/g, "").slice(0, 4)); }}
+        placeholder="Enter your 4-digit PIN" inputMode="numeric" style={inputStyle} />
+      {err && <p style={{ color: C.felt, fontSize: 13, margin: "8px 0 0" }}>That PIN doesn't match.</p>}
+      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+        <Btn disabled={val.length !== 4} onClick={() => (val === pin ? onOk() : setErr(true))}>Unlock</Btn>
+        <Btn kind="ghost" onClick={onBack}>Back</Btn>
+      </div>
+    </Card>
+  );
+}
+
+function StudentPick({ students, onPick, onCreate, onBack }) {
+  const [name, setName] = useState("");
+  return (
+    <div style={{ marginTop: 16, display: "grid", gap: 14, maxWidth: 480 }}>
+      {students.length > 0 && (
+        <Card>
+          <h2 style={h2Style}>Welcome back</h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {students.map((s) => <Btn key={s.id} kind="ghost" onClick={() => onPick(s)}>{s.name}</Btn>)}
+          </div>
+        </Card>
+      )}
+      <Card>
+        <h2 style={h2Style}>New student</h2>
+        <input value={name} onChange={(e) => setName(e.target.value)}
+          placeholder="Your name (e.g. Mia L.)" style={inputStyle} />
+        <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+          <Btn kind="accent" disabled={!name.trim()} onClick={() => onCreate(name)}>Join the studio</Btn>
+          <Btn kind="ghost" onClick={onBack}>Back</Btn>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Tabs({ items, active, onChange, badges = {} }) {
+  return (
+    <nav style={{ display: "flex", gap: 4, borderBottom: `1px solid ${C.line}`, margin: "16px 0 20px", overflowX: "auto" }}>
+      {items.map((t) => (
+        <button key={t} onClick={() => onChange(t)} style={{
+          fontFamily: "'Inter', sans-serif", fontSize: 14,
+          fontWeight: active === t ? 600 : 500, color: active === t ? C.ebony : C.inkSoft,
+          background: "none", border: "none",
+          borderBottom: active === t ? `2px solid ${C.felt}` : "2px solid transparent",
+          padding: "10px 12px", cursor: "pointer", whiteSpace: "nowrap",
+        }}>
+          {t}
+          {badges[t] ? (
+            <span style={{ marginLeft: 6, background: C.felt, color: "#fff", borderRadius: 999, fontSize: 11, padding: "1px 7px" }}>
+              {badges[t]}
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/* ═══════════ teacher ═══════════ */
+function TeacherHome({ settings, students, bookings, messages, onSettings, onStatus, onNote, onSend, flash }) {
+  const [tab, setTab] = useState("Schedule");
+  const pendingCount = bookings.filter((b) => b.status === "pending").length;
+  return (
+    <div>
+      <Tabs items={["Schedule", "Requests", "Students", "Messages", "Availability"]}
+        active={tab} onChange={setTab} badges={{ Requests: pendingCount }} />
+      {tab === "Schedule" && <TeacherSchedule bookings={bookings} onStatus={onStatus} onNote={onNote} />}
+      {tab === "Requests" && <Requests bookings={bookings} onStatus={onStatus} />}
+      {tab === "Students" && <Roster students={students} bookings={bookings} />}
+      {tab === "Messages" && <TeacherMessages students={students} messages={messages} onSend={onSend} />}
+      {tab === "Availability" && (
+        <React.Fragment>
+          <Availability settings={settings} onSettings={onSettings} flash={flash} />
+          <ChangePin settings={settings} onSettings={onSettings} flash={flash} />
+        </React.Fragment>
+      )}
+    </div>
+  );
+}
+
+function upcoming(bookings) {
+  const t = todayKey();
+  return bookings
+    .filter((b) => b.date >= t && ["pending", "confirmed"].includes(b.status))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+
+function TeacherSchedule({ bookings, onStatus, onNote }) {
+  const list = upcoming(bookings);
+  const [editing, setEditing] = useState(null);
+  const [noteDraft, setNoteDraft] = useState("");
+
+  if (list.length === 0)
+    return (
+      <Card>
+        <p style={pMuted}>
+          No upcoming lessons yet. Once students book, they'll appear here —
+          share this website's link with them to get started.
+        </p>
+      </Card>
+    );
+
+  let lastDate = null;
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {list.map((b) => {
+        const showDate = b.date !== lastDate;
+        lastDate = b.date;
+        return (
+          <div key={b.id}>
+            {showDate && (
+              <p style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 16, fontWeight: 600, margin: "14px 0 8px" }}>
+                {niceDate(b.date)}
+              </p>
+            )}
+            <Card style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div>
+                  <strong style={{ fontSize: 15 }}>{niceTime(b.time)}</strong>
+                  <span style={{ color: C.inkSoft }}> — {b.studentName}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <Tag tone={b.status}>{b.status}</Tag>
+                  {b.status === "confirmed" && (
+                    <Btn kind="ghost" style={{ padding: "6px 10px", fontSize: 13 }}
+                      onClick={() => onStatus(b.id, "cancelled")}>Cancel</Btn>
+                  )}
+                </div>
+              </div>
+              {editing === b.id ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)}
+                    placeholder="Lesson note (e.g. Hanon ex. 3, Clementi 1st mvt)"
+                    style={{ ...inputStyle, flex: 1 }} />
+                  <Btn style={{ padding: "8px 12px" }}
+                    onClick={() => { onNote(b.id, noteDraft); setEditing(null); }}>Save</Btn>
+                </div>
+              ) : (
+                <button onClick={() => { setEditing(b.id); setNoteDraft(b.note || ""); }}
+                  style={{
+                    background: "none", border: "none", padding: 0, textAlign: "left",
+                    cursor: "pointer", color: b.note ? C.ebony : C.inkSoft, fontSize: 13,
+                  }}>
+                  {b.note ? `♪ ${b.note}` : "+ Add lesson note"}
+                </button>
+              )}
+            </Card>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Requests({ bookings, onStatus }) {
+  const pending = bookings.filter((b) => b.status === "pending")
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  if (pending.length === 0)
+    return <Card><p style={pMuted}>No requests waiting. You're all caught up.</p></Card>;
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {pending.map((b) => (
+        <Card key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div>
+            <strong>{b.studentName}</strong>
+            <span style={{ color: C.inkSoft }}> · {niceDate(b.date)} at {niceTime(b.time)}</span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn style={{ background: C.green, padding: "8px 14px" }}
+              onClick={() => onStatus(b.id, "confirmed")}>Confirm</Btn>
+            <Btn kind="ghost" onClick={() => onStatus(b.id, "declined")}>Decline</Btn>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function Roster({ students, bookings }) {
+  if (students.length === 0)
+    return (
+      <Card>
+        <p style={pMuted}>No students yet. When a student opens this site and joins, they'll show up here.</p>
+      </Card>
+    );
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {students.map((s) => {
+        const theirs = bookings.filter((b) => b.studentId === s.id);
+        const done = theirs.filter((b) => b.status === "confirmed" && b.date < todayKey()).length;
+        const next = upcoming(theirs).find((b) => b.status === "confirmed");
+        return (
+          <Card key={s.id}>
+            <strong style={{ fontSize: 15 }}>{s.name}</strong>
+            <p style={{ ...pMuted, margin: "4px 0 0", fontSize: 13 }}>
+              {done} past lesson{done === 1 ? "" : "s"} ·{" "}
+              {next ? `next: ${niceDate(next.date)} at ${niceTime(next.time)}` : "no upcoming lesson booked"}
+            </p>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function Thread({ msgs, meRole }) {
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [msgs.length]);
+  return (
+    <div style={{ maxHeight: 300, overflowY: "auto", display: "grid", gap: 8, padding: "4px 2px" }}>
+      {msgs.length === 0 && <p style={{ ...pMuted, fontSize: 13 }}>No messages yet — say hello.</p>}
+      {msgs.map((m) => {
+        const mine = m.fromRole === meRole;
+        return (
+          <div key={m.id} style={{
+            justifySelf: mine ? "end" : "start", maxWidth: "80%",
+            background: mine ? C.ebony : "#EFECE5", color: mine ? C.ivory : C.ebony,
+            padding: "8px 12px", borderRadius: 12, fontSize: 14,
+          }}>
+            <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
+              {m.fromName} · {new Date(m.ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            </div>
+            {m.text}
+          </div>
+        );
+      })}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
+function Composer({ onSend }) {
+  const [text, setText] = useState("");
+  const send = () => { onSend(text); setText(""); };
+  return (
+    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+      <input value={text} onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && send()}
+        placeholder="Write a message…" style={{ ...inputStyle, flex: 1 }} />
+      <Btn disabled={!text.trim()} onClick={send}>Send</Btn>
+    </div>
+  );
+}
+
+function TeacherMessages({ students, messages, onSend }) {
+  const [sel, setSel] = useState(students[0]?.id || null);
+  useEffect(() => { if (!sel && students[0]) setSel(students[0].id); }, [students, sel]);
+  if (students.length === 0)
+    return <Card><p style={pMuted}>Messages will appear once a student joins.</p></Card>;
+  const msgs = messages.filter((m) => m.studentId === sel).sort((a, b) => a.ts - b.ts);
+  return (
+    <Card>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+        {students.map((s) => (
+          <button key={s.id} onClick={() => setSel(s.id)} style={{
+            fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 999,
+            border: `1px solid ${sel === s.id ? C.ebony : C.line}`,
+            background: sel === s.id ? C.ebony : "transparent",
+            color: sel === s.id ? C.ivory : C.ebony, cursor: "pointer",
+          }}>{s.name}</button>
+        ))}
+      </div>
+      <Thread msgs={msgs} meRole="teacher" />
+      <Composer onSend={(t) => onSend(sel, t)} />
+    </Card>
+  );
+}
+
+function ChangePin({ settings, onSettings, flash }) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    if (current !== settings.pin) { setErr("Current PIN doesn't match."); return; }
+    if (next.length !== 4) { setErr("New PIN must be 4 digits."); return; }
+    await onSettings({ ...settings, pin: next });
+    setCurrent(""); setNext(""); setErr("");
+    flash("PIN updated.");
+  };
+
+  return (
+    <Card style={{ marginTop: 14 }}>
+      <h2 style={h2Style}>Change teacher PIN</h2>
+      <p style={pMuted}>Enter your current PIN, then choose a new 4-digit PIN.</p>
+      <div style={{ display: "grid", gap: 8, maxWidth: 320 }}>
+        <input value={current}
+          onChange={(e) => { setErr(""); setCurrent(e.target.value.replace(/\D/g, "").slice(0, 4)); }}
+          placeholder="Current PIN" inputMode="numeric" style={inputStyle} />
+        <input value={next}
+          onChange={(e) => { setErr(""); setNext(e.target.value.replace(/\D/g, "").slice(0, 4)); }}
+          placeholder="New 4-digit PIN" inputMode="numeric" style={inputStyle} />
+        {err && <p style={{ color: C.felt, fontSize: 13, margin: 0 }}>{err}</p>}
+        <Btn disabled={current.length !== 4 || next.length !== 4} onClick={submit}
+          style={{ justifySelf: "start" }}>Update PIN</Btn>
+      </div>
+    </Card>
+  );
+}
+
+function Availability({ settings, onSettings, flash }) {
+  const [draft, setDraft] = useState(settings.availability);
+  useEffect(() => setDraft(settings.availability), [settings.availability]);
+
+  const toggle = (day, time) => {
+    const cur = new Set(draft[day] || []);
+    cur.has(time) ? cur.delete(time) : cur.add(time);
+    setDraft({ ...draft, [day]: [...cur].sort() });
+  };
+
+  return (
+    <Card>
+      <h2 style={h2Style}>Weekly availability</h2>
+      <p style={pMuted}>
+        Tap times to open or close them. Students can only request open times.
+        Lessons are {settings.lessonMinutes} minutes.
+      </p>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "separate", borderSpacing: 4 }}>
+          <thead>
+            <tr>
+              <th />
+              {ALL_SLOT_TIMES.map((t) => (
+                <th key={t} style={{ fontSize: 10, fontWeight: 500, color: C.inkSoft, padding: "0 2px" }}>
+                  {niceTime(t).replace(":00", "")}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[1, 2, 3, 4, 5, 6, 0].map((day) => (
+              <tr key={day}>
+                <td style={{ fontSize: 12, fontWeight: 600, paddingRight: 6, color: C.inkSoft }}>
+                  {WEEKDAYS[day]}
+                </td>
+                {ALL_SLOT_TIMES.map((t) => {
+                  const open = (draft[day] || []).includes(t);
+                  return (
+                    <td key={t}>
+                      <button
+                        aria-label={`${WEEKDAYS[day]} ${niceTime(t)} ${open ? "open" : "closed"}`}
+                        onClick={() => toggle(day, t)}
+                        style={{
+                          width: 22, height: 34, borderRadius: "0 0 4px 4px",
+                          border: `1px solid ${open ? C.line : C.ebony}`,
+                          borderTop: `3px solid ${open ? C.felt : C.ebony}`,
+                          background: open ? "#fff" : C.ebony, cursor: "pointer",
+                        }} />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{ ...pMuted, fontSize: 12, marginTop: 8 }}>
+        White keys are open for booking; black keys are closed.
+      </p>
+      <Btn style={{ marginTop: 8 }}
+        onClick={async () => { await onSettings({ ...settings, availability: draft }); flash("Availability saved."); }}>
+        Save availability
+      </Btn>
+    </Card>
+  );
+}
+
+/* ═══════════ student ═══════════ */
+function StudentHome({ me, settings, bookings, messages, onRequest, onCancel, onSend }) {
+  const [tab, setTab] = useState("Book a lesson");
+  const mine = bookings.filter((b) => b.studentId === me.id);
+  const msgs = messages.filter((m) => m.studentId === me.id).sort((a, b) => a.ts - b.ts);
+
+  return (
+    <div>
+      <Tabs items={["Book a lesson", "My lessons", "Messages"]} active={tab} onChange={setTab} />
+      {tab === "Book a lesson" && <BookLesson settings={settings} bookings={bookings} onRequest={onRequest} />}
+      {tab === "My lessons" && <MyLessons mine={mine} onCancel={onCancel} />}
+      {tab === "Messages" && (
+        <Card>
+          <Thread msgs={msgs} meRole="student" />
+          <Composer onSend={onSend} />
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function BookLesson({ settings, bookings, onRequest }) {
+  const days = [];
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i); days.push(d);
+  }
+  const firstWithSlots = days.find((d) => (settings.availability[d.getDay()] || []).length > 0);
+  const [selDay, setSelDay] = useState(firstWithSlots ? fmtDateKey(firstWithSlots) : fmtDateKey(days[0]));
+
+  const taken = new Set(
+    bookings.filter((b) => b.date === selDay && ["pending", "confirmed"].includes(b.status)).map((b) => b.time)
+  );
+  const dayIdx = parseDateKey(selDay).getDay();
+  const slots = settings.availability[dayIdx] || [];
+
+  return (
+    <Card>
+      <h2 style={h2Style}>Pick a day</h2>
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 14 }}>
+        {days.map((d) => {
+          const k = fmtDateKey(d);
+          const has = (settings.availability[d.getDay()] || []).length > 0;
+          const sel = k === selDay;
+          return (
+            <button key={k} onClick={() => setSelDay(k)} disabled={!has} style={{
+              minWidth: 56, padding: "8px 4px", borderRadius: 8,
+              border: `1px solid ${sel ? C.ebony : C.line}`,
+              background: sel ? C.ebony : has ? "#fff" : "#F0EDE6",
+              color: sel ? C.ivory : has ? C.ebony : "#B5AFA3",
+              cursor: has ? "pointer" : "default", fontSize: 12, fontWeight: 600, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.75 }}>{WEEKDAYS[d.getDay()]}</div>
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+
+      <h2 style={h2Style}>{niceDate(selDay)} — open times</h2>
+      {slots.length === 0 ? (
+        <p style={pMuted}>The studio is closed this day.</p>
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {slots.map((t) => {
+            const isTaken = taken.has(t);
+            return (
+              <button key={t} disabled={isTaken} onClick={() => onRequest(selDay, t)} style={{
+                width: 84, padding: "14px 0 10px", borderRadius: "0 0 8px 8px",
+                border: `1px solid ${isTaken ? C.ebony : C.line}`,
+                borderTop: `4px solid ${isTaken ? C.ebony : C.felt}`,
+                background: isTaken ? C.ebony : "#fff",
+                color: isTaken ? "#6E6A63" : C.ebony,
+                fontWeight: 600, fontSize: 14, cursor: isTaken ? "default" : "pointer",
+              }}>
+                {niceTime(t)}
+                <div style={{ fontSize: 10, fontWeight: 500, marginTop: 2 }}>
+                  {isTaken ? "taken" : "request"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <p style={{ ...pMuted, fontSize: 12, marginTop: 14 }}>
+        Requests are pending until your teacher confirms them. You'll see the status under "My lessons."
+      </p>
+    </Card>
+  );
+}
+
+function MyLessons({ mine, onCancel }) {
+  const t = todayKey();
+  const future = mine.filter((b) => b.date >= t && b.status !== "cancelled")
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const past = mine.filter((b) => b.date < t && b.status === "confirmed")
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div>
+        <h2 style={h2Style}>Upcoming</h2>
+        {future.length === 0 ? (
+          <Card><p style={pMuted}>Nothing booked yet — head to "Book a lesson" to pick a time.</p></Card>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {future.map((b) => (
+              <Card key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div>
+                  <strong>{niceDate(b.date)}</strong>
+                  <span style={{ color: C.inkSoft }}> at {niceTime(b.time)}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <Tag tone={b.status}>{b.status}</Tag>
+                  {["pending", "confirmed"].includes(b.status) && (
+                    <Btn kind="ghost" style={{ padding: "6px 10px", fontSize: 13 }}
+                      onClick={() => onCancel(b.id)}>Cancel</Btn>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+      {past.length > 0 && (
+        <div>
+          <h2 style={h2Style}>Past lessons</h2>
+          <div style={{ display: "grid", gap: 10 }}>
+            {past.map((b) => (
+              <Card key={b.id}>
+                <strong>{niceDate(b.date)}</strong>
+                <span style={{ color: C.inkSoft }}> at {niceTime(b.time)}</span>
+                {b.note && <p style={{ ...pMuted, margin: "6px 0 0", fontSize: 13 }}>♪ {b.note}</p>}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<PianoStudio />);
+</script>
+</body>
+</html>
