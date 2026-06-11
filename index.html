@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Magic Space — Simple apps, made carefully</title>
+<meta name="description" content="AI Magic Space is a small studio building simple, useful apps. No bloat, no clutter — just software that does one thing well.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Albert+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#FAF8FF;
+    --ink:#1B1133;
+    --ink-soft:#4A3D6E;
+    --violet:#6C4DF6;
+    --violet-deep:#4B2FD6;
+    --mist:#ECE6FC;
+    --spark:#FFB938;
+    --card:#FFFFFF;
+    --radius-squircle:32% / 32%;
+    --max:1100px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Albert Sans',system-ui,sans-serif;
+    background:var(--ground);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(250,248,255,.85);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--mist);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:'Unbounded',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.02em}
+  .logo-mark{
+    width:34px;height:34px;flex:none;
+    background:linear-gradient(135deg,var(--violet),var(--violet-deep));
+    border-radius:32%;
+    display:grid;place-items:center;color:#fff;font-size:1rem;
+  }
+  nav ul{display:flex;gap:28px;list-style:none;align-items:center}
+  nav a{text-decoration:none;font-weight:500;font-size:.95rem;color:var(--ink-soft);transition:color .15s}
+  nav a:hover{color:var(--violet-deep)}
+  .btn{
+    display:inline-block;background:var(--ink);color:#fff;text-decoration:none;
+    padding:12px 24px;border-radius:999px;font-weight:600;font-size:.95rem;
+    transition:transform .15s,background .15s;border:none;cursor:pointer;
+  }
+  .btn:hover{background:var(--violet-deep);transform:translateY(-1px)}
+  .btn-light{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+  .btn-light:hover{background:var(--mist);color:var(--ink)}
+  .menu-toggle{display:none}
+
+  /* ---------- hero ---------- */
+  .hero{padding:88px 0 64px;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+  .eyebrow{
+    font-family:'Space Mono',monospace;font-size:.78rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--violet-deep);margin-bottom:20px;display:block;
+  }
+  h1{
+    font-family:'Unbounded',sans-serif;font-weight:700;
+    font-size:clamp(2.1rem,4.6vw,3.4rem);line-height:1.12;letter-spacing:-.01em;
+  }
+  h1 .magic{
+    background:linear-gradient(100deg,var(--violet) 10%,var(--spark) 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    white-space:nowrap;
+  }
+  .hero p{margin:24px 0 36px;font-size:1.13rem;color:var(--ink-soft);max-width:46ch}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+
+  /* signature: floating app-icon constellation */
+  .constellation{position:relative;height:420px}
+  .app-icon{
+    position:absolute;width:96px;height:96px;border-radius:var(--radius-squircle);
+    display:grid;place-items:center;font-size:2rem;
+    background:var(--card);
+    box-shadow:0 10px 30px rgba(27,17,51,.10),0 2px 6px rgba(27,17,51,.06);
+    border:1px solid var(--mist);
+    animation:float 7s ease-in-out infinite;
+    transition:transform .2s;
+    cursor:default;
+  }
+  .app-icon:hover{transform:scale(1.08)}
+  .app-icon span.label{
+    position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);
+    font-family:'Space Mono',monospace;font-size:.68rem;white-space:nowrap;
+    color:var(--ink-soft);opacity:0;transition:opacity .2s;
+  }
+  .app-icon:hover span.label{opacity:1}
+  .ic1{top:8%;left:12%;animation-delay:0s}
+  .ic2{top:2%;right:14%;width:80px;height:80px;font-size:1.7rem;animation-delay:-2.2s}
+  .ic3{top:40%;left:38%;width:116px;height:116px;font-size:2.5rem;animation-delay:-4s;background:linear-gradient(135deg,var(--violet),var(--violet-deep));border:none}
+  .ic4{bottom:14%;left:6%;width:84px;height:84px;font-size:1.8rem;animation-delay:-1.4s}
+  .ic5{bottom:6%;right:10%;animation-delay:-3.1s}
+  .ic6{top:34%;right:0;width:72px;height:72px;font-size:1.5rem;animation-delay:-5.3s}
+  @keyframes float{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-14px)}
+  }
+  .app-icon:hover{animation-play-state:paused}
+
+  /* ---------- sections ---------- */
+  section{padding:88px 0}
+  .section-head{max-width:640px;margin-bottom:56px}
+  h2{font-family:'Unbounded',sans-serif;font-weight:500;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.25;margin-bottom:14px}
+  .section-head p{color:var(--ink-soft);font-size:1.05rem}
+
+  /* principles */
+  .principles{background:var(--ink);color:var(--ground);border-radius:40px}
+  .principles .section-head p{color:#B9AEDD}
+  .principles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+  .principle{
+    border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:32px 28px;
+    background:rgba(255,255,255,.03);
+  }
+  .principle .glyph{
+    width:48px;height:48px;border-radius:32%;display:grid;place-items:center;
+    font-size:1.3rem;margin-bottom:20px;background:rgba(108,77,246,.25);
+  }
+  .principle h3{font-size:1.1rem;font-weight:600;margin-bottom:10px}
+  .principle p{color:#B9AEDD;font-size:.97rem}
+
+  /* apps */
+  .apps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+  .app-card{
+    background:var(--card);border:1px solid var(--mist);border-radius:28px;
+    padding:32px;transition:transform .18s,box-shadow .18s;
+  }
+  .app-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(27,17,51,.10)}
+  .app-card .icon{
+    width:64px;height:64px;border-radius:32%;display:grid;place-items:center;
+    font-size:1.7rem;margin-bottom:22px;background:var(--mist);
+  }
+  .app-card h3{font-size:1.15rem;margin-bottom:8px}
+  .app-card p{color:var(--ink-soft);font-size:.96rem;margin-bottom:18px}
+  .tag{
+    font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--violet-deep);
+    background:rgba(108,77,246,.10);padding:5px 12px;border-radius:999px;
+  }
+
+  /* process */
+  .process{display:grid;grid-template-columns:repeat(3,1fr);gap:40px}
+  .step .num{
+    font-family:'Space Mono',monospace;font-size:.8rem;color:var(--violet-deep);
+    letter-spacing:.1em;display:block;margin-bottom:14px;
+  }
+  .step h3{font-size:1.1rem;margin-bottom:8px}
+  .step p{color:var(--ink-soft);font-size:.96rem}
+
+  /* cta */
+  .cta{
+    text-align:center;background:linear-gradient(135deg,var(--mist),#F4EFFF);
+    border-radius:40px;padding:88px 32px;
+  }
+  .cta h2{margin-bottom:14px}
+  .cta p{color:var(--ink-soft);max-width:48ch;margin:0 auto 36px;font-size:1.08rem}
+
+  /* footer */
+  footer{padding:48px 0;border-top:1px solid var(--mist)}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+  .foot small{color:var(--ink-soft);font-size:.88rem}
+  .foot-links{display:flex;gap:24px;list-style:none}
+  .foot-links a{text-decoration:none;font-size:.9rem;color:var(--ink-soft)}
+  .foot-links a:hover{color:var(--violet-deep)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:880px){
+    .hero{grid-template-columns:1fr;padding-top:56px}
+    .constellation{height:340px;max-width:480px}
+    .principles-grid,.apps-grid,.process{grid-template-columns:1fr}
+    nav ul{display:none}
+    .menu-toggle{
+      display:block;background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--ink);
+    }
+    nav.open ul{
+      display:flex;flex-direction:column;position:absolute;top:72px;left:0;right:0;
+      background:var(--ground);padding:24px;border-bottom:1px solid var(--mist);gap:18px;
+    }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .app-icon{animation:none}
+    *{transition:none!important;scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top" aria-label="AI Magic Space home">
+      <span class="logo-mark" aria-hidden="true">✦</span>
+      AI&nbsp;Magic&nbsp;Space
+    </a>
+    <nav id="nav" aria-label="Main">
+      <button class="menu-toggle" aria-expanded="false" aria-controls="navlist" onclick="toggleMenu(this)">☰</button>
+      <ul id="navlist">
+        <li><a href="#apps">Apps</a></li>
+        <li><a href="#principles">Our ideals</a></li>
+        <li><a href="#process">Our philosophy</a></li>
+        <li><a class="btn" href="#contact">We like to hear from you</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <div class="wrap hero">
+    <div>
+      <span class="eyebrow">Apps just for you</span>
+      <h1>Simple apps,<br>built with a little <span class="magic">magic</span>.</h1>
+      <p>Small, friendly apps that do one thing well. No bloat, no clutter, no learning curve — open it, use it, get on with your day.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#apps">Our apps gallery</a>
+        <a class="btn btn-light" href="#contact">Need something?</a>
+      </div>
+    </div>
+    <div class="constellation" aria-hidden="true">
+      <div class="app-icon ic1">📝<span class="label">notes</span></div>
+      <div class="app-icon ic2">⏱️<span class="label">timers</span></div>
+      <div class="app-icon ic3">✦<span class="label">your idea</span></div>
+      <div class="app-icon ic4">📋<span class="label">lists</span></div>
+      <div class="app-icon ic5">🔁<span class="label">habits</span></div>
+      <div class="app-icon ic6">🧮<span class="label">tools</span></div>
+    </div>
+  </div>
+
+  <!-- PRINCIPLES -->
+  <section id="principles">
+    <div class="wrap principles" style="padding:72px 48px">
+      <div class="section-head">
+        <h2>Our three ideals</h2>
+        <p>We make sure these qualities are met — in every app, for every person.</p>
+      </div>
+      <div class="principles-grid">
+        <div class="principle">
+          <div class="glyph">🎯</div>
+          <h3>One job, done well</h3>
+          <p>Your app solves exactly one problem — yours. We'd rather make you three small apps than one big confusing one.</p>
+        </div>
+        <div class="principle">
+          <div class="glyph">⚡</div>
+          <h3>Fast from the first tap</h3>
+          <p>Opens instantly, works offline where it can, and never makes you wait for something simple.</p>
+        </div>
+        <div class="principle">
+          <div class="glyph">🔒</div>
+          <h3>Your data stays yours</h3>
+          <p>No accounts unless you truly need them, no tracking, and nothing of yours sold to anyone, ever.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPS -->
+  <section id="apps">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Apps we've made so far...</h2>
+        <p>Little tools made with care, one person at a time. Maybe the next one on this shelf is yours.</p>
+      </div>
+      <div class="apps-grid">
+        <article class="app-card">
+          <div class="icon">📝</div>
+          <h3>QuickNote</h3>
+          <p>Open, type, done. A notes app with zero setup that saves the moment you stop typing.</p>
+          <span class="tag">Productivity</span>
+        </article>
+        <article class="app-card">
+          <div class="icon">🔁</div>
+          <h3>HabitLoop</h3>
+          <p>Track up to five habits with a single tap a day. Gentle streaks, no guilt trips.</p>
+          <span class="tag">Lifestyle</span>
+        </article>
+        <article class="app-card">
+          <div class="icon">⏱️</div>
+          <h3>FocusBell</h3>
+          <p>A clean focus timer with one button and a satisfying chime. That's the whole app.</p>
+          <span class="tag">Focus</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Our work philosophy...</h2>
+        <p>Your idea goes from a chat to an app in weeks, not months — because something made just for you shouldn't take forever.</p>
+      </div>
+      <div class="process">
+        <div class="step">
+          <span class="num">STEP 1 — LISTEN</span>
+          <h3>We listen to you</h3>
+          <p>You tell us your idea, and together we find the one thing that matters most to you. Everything else can wait.</p>
+        </div>
+        <div class="step">
+          <span class="num">STEP 2 — BUILD</span>
+          <h3>You see it early</h3>
+          <p>A working version in your hands fast, so your feedback shapes the app while it's still easy to change.</p>
+        </div>
+        <div class="step">
+          <span class="num">STEP 3 — POLISH</span>
+          <h3>We sweat the small stuff</h3>
+          <p>Icons, animations, the little moments — the details that make your app feel like it was made just for you. Because it was.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="contact">
+    <div class="wrap">
+      <div class="cta">
+        <span class="eyebrow">Let's build something maybe?</span>
+        <h2>Have an idea for a simple app?</h2>
+        <p>Tell us about it — yes, you. We read every message ourselves and reply within two business days with honest thoughts, even if the honest thought is "you don't need an app for that."</p>
+        <a class="btn" href="mailto:hello@aimagic.space">hello@aimagic.space</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="logo" href="#top"><span class="logo-mark" aria-hidden="true">✦</span>AI Magic Space</a>
+    <ul class="foot-links">
+      <li><a href="#apps">Apps</a></li>
+      <li><a href="#principles">Principles</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <small>© 2026 AI Magic Space. Made with care (and a little magic).</small>
+  </div>
+</footer>
+
+<script>
+  function toggleMenu(btn){
+    const nav = document.getElementById('nav');
+    const open = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+  }
+  // close mobile menu after choosing a link
+  document.querySelectorAll('#navlist a').forEach(a=>{
+    a.addEventListener('click',()=>{
+      document.getElementById('nav').classList.remove('open');
+    });
+  });
+</script>
+
+</body>
+</html>
